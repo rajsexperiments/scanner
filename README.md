@@ -29,7 +29,7 @@ This application uses Google Sheets as its database. You must set up your own sh
 
 ### Step 1: Create Your Google Sheet
 
-1.  Go to [sheets.google.com](https://sheets.google.com) and create a new spreadsheet. Name it "StockLens Inventory".
+1.  Go to [sheets.google.com](https://sheets.google.com) and create a new spreadsheet. Name it "Inventory".
 2.  Create five tabs (sheets) at the bottom with these exact names:
     *   `Master Product List`
     *   `Scanned Inventory Log`
