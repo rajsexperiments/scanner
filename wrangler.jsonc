@@ -4,7 +4,7 @@
  */
  {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "v1-stocklens-6962c179-4e29-4580-846f-8b5efd523341",
+	"name": "scanner-inventory",
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-04-24",
 	"assets": {
