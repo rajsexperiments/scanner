@@ -10,8 +10,8 @@ const PRODUCT_SHEET_NAME = 'Master Product List';
 const SUMMARY_SHEET_NAME = 'Live Inventory Dashboard';
 const USER_SHEET_NAME = 'Users';
 const B2B_CLIENTS_SHEET_NAME = 'B2B Clients';
-const CACHE_EXPIRATION_SECONDS = 1800; // 30 minutes (reduced for fresher data)
-const LOCK_TIMEOUT_MS = 30000; // 30 seconds
+const CACHE_EXPIRATION_SECONDS = 30; // 30 sec (reduced for fresher data)
+const LOCK_TIMEOUT_MS = 3000; // 3 seconds
 
 // --- WEB APP ENTRY POINTS ---
 
