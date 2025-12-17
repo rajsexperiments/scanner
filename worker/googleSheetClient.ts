@@ -1,177 +1,63 @@
-interface ScanLogData {
-  serialNumber: string;
-  scanEvent: string;
-  location: string;
-  timestamp: string;
-  clientId?: string;
-}
-
-const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
-
+import type { ApiResponse, ScanLog, InventorySummaryItem, Product, User, ScanEvent, CakeStatus, LiveOperationsData, B2BClient } from '@shared/types';
+// This is the production URL for the Google Apps Script backend.
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxKYrBFZmbNWC9a6bsbexEkgTTVCTYv1BlwtV3ydaT5W1ftGj3MdTNkzSmhMA5kyWQO/exec';
 export class GoogleSheetClient {
-  private scriptUrl: string;
-
-  constructor(scriptUrl: string) {
-    if (!scriptUrl) {
-      throw new Error('GOOGLE_SCRIPT_API_KEY environment variable is not set');
-    }
-    this.scriptUrl = scriptUrl;
+  private apiKey: string;
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
-
-  private async makeRequest(action: string, payload?: any): Promise<any> {
+  private async fetchFromGoogleScript<T>(
+    method: 'GET' | 'POST',
+    action: string,
+    payload?: object
+  ): Promise<ApiResponse<T>> {
     try {
-      console.log(`[GOOGLE_SHEETS_API] ${action}:`, payload || 'no payload');
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-      const response = await fetch(this.scriptUrl, {
-        method: 'POST',
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action,
-          payload
-        }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      let response: Response;
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      // Only add Authorization header if an API key is provided
+      if (this.apiKey) {
+        headers['Authorization'] = `Bearer ${this.apiKey}`;
       }
-
-      const result = await response.json();
-      console.log(`[GOOGLE_SHEETS_API] ${action} response:`, result);
-
-      if (!result.success) {
-        throw new Error(result.error || 'Unknown error from Google Sheets API');
+      if (method === 'GET') {
+        const url = new URL(GOOGLE_SCRIPT_URL);
+        url.searchParams.append('action', action);
+        response = await fetch(url.toString(), {
+          method: 'GET',
+          headers,
+        });
+      } else { // POST
+        response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ action, payload }),
+        });
       }
-
-      return result;
-
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.error(`[GOOGLE_SHEETS_API_ERROR] ${action} timed out after ${REQUEST_TIMEOUT_MS}ms`);
-        throw new Error(`Request timed out. Please try again.`);
+      const contentType = response.headers.get('content-type');
+      if (response.ok && contentType && contentType.includes('application/json')) {
+        return await response.json() as ApiResponse<T>;
+      } else {
+        const text = await response.text();
+        const errorMessage = `Received non-JSON response from server: ${text}`;
+        console.error(`Error calling Google Script action "${action}":`, errorMessage);
+        return { success: false, error: errorMessage };
       }
-      console.error(`[GOOGLE_SHEETS_API_ERROR] ${action}:`, error);
-      throw new Error(`Failed to ${action}: ${error.message}`);
+    } catch (error) {
+      console.error(`Error calling Google Script action "${action}":`, error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred while contacting the backend.';
+      return { success: false, error: errorMessage };
     }
   }
-
-  async addScan(serialNumber: string, scanEvent: string, location: string, clientId?: string): Promise<any> {
-    return this.makeRequest('addScan', {
-      serialNumber,
-      scanEvent,
-      location,
-      timestamp: new Date().toISOString(),
-      b2bClientId: clientId
-    });
-  }
-
-  async getLogs(): Promise<any> {
-    const response = await fetch(`${this.scriptUrl}?action=getLogs`, {
-      method: 'GET',
-      mode: 'cors',
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to fetch logs');
-    }
-
-    return result;
-  }
-
-  async clearLogs(): Promise<any> {
-    return this.makeRequest('clearLogs');
-  }
-
-  async getSummary(): Promise<any> {
-    const response = await fetch(`${this.scriptUrl}?action=getSummary`, {
-      method: 'GET',
-      mode: 'cors',
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to fetch summary');
-    }
-
-    return result;
-  }
-
-  async getProducts(): Promise<any> {
-    const response = await fetch(`${this.scriptUrl}?action=getProducts`, {
-      method: 'GET',
-      mode: 'cors',
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to fetch products');
-    }
-
-    return result;
-  }
-
-  async addProduct(product: any): Promise<any> {
-    return this.makeRequest('addProduct', product);
-  }
-
-  async deleteProduct(productId: string): Promise<any> {
-    return this.makeRequest('deleteProduct', { productId });
-  }
-
-  async getUsers(): Promise<any> {
-    const response = await fetch(`${this.scriptUrl}?action=getUsers`, {
-      method: 'GET',
-      mode: 'cors',
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to fetch users');
-    }
-
-    return result;
-  }
-
-  async getB2BClients(): Promise<any> {
-    const response = await fetch(`${this.scriptUrl}?action=getB2BClients`, {
-      method: 'GET',
-      mode: 'cors',
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to fetch B2B clients');
-    }
-
-    return result;
-  }
+  addScan = (serialNumber: string, scanEvent: ScanEvent, location: string, clientId?: string) => this.fetchFromGoogleScript<ScanLog>('POST', 'addScan', { serialNumber, scanEvent, location, clientId });
+  getLogs = () => this.fetchFromGoogleScript<ScanLog[]>('GET', 'getLogs');
+  clearLogs = () => this.fetchFromGoogleScript<{ message: string }>('POST', 'clearLogs');
+  getSummary = () => this.fetchFromGoogleScript<InventorySummaryItem[]>('GET', 'getSummary');
+  getProducts = () => this.fetchFromGoogleScript<Product[]>('GET', 'getProducts');
+  addProduct = (product: Product) => this.fetchFromGoogleScript<Product[]>('POST', 'addProduct', product);
+  deleteProduct = (productId: string) => this.fetchFromGoogleScript<Product[]>('POST', 'deleteProduct', { productId });
+  getUsers = () => this.fetchFromGoogleScript<User[]>('GET', 'getUsers');
+  getCakeStatus = () => this.fetchFromGoogleScript<CakeStatus[]>('GET', 'getCakeStatus');
+  getLiveOperationsData = () => this.fetchFromGoogleScript<LiveOperationsData>('GET', 'getLiveOperationsData');
+  getB2BClients = () => this.fetchFromGoogleScript<B2BClient[]>('GET', 'getB2BClients');
 }
