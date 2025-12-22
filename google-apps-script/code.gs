@@ -4,7 +4,7 @@
  * This version includes automatic product synchronization between Master Product List
  * and Live Inventory Dashboard, plus all previous functionality with comprehensive logging.
  */
-//New Code
+//New Codee
 
 // --- CONFIGURATION ---
 const LOG_SHEET_NAME = 'Scanned Inventory Log';
