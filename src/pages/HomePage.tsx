@@ -16,10 +16,9 @@ export function HomePage() {
   const { t } = useTranslation();
   const SCAN_EVENTS: { value: ScanEvent; label: string }[] = [
     { value: 'PRODUCTION_SCAN', label: t('scanner.events.PRODUCTION_SCAN') },
-    { value: 'BOUTIQUE_STOCK_SCAN', label: t('scanner.events.BOUTIQUE_STOCK_SCAN') },
-    { value: 'MARCHE_STOCK_SCAN', label: t('scanner.events.MARCHE_STOCK_SCAN') },
-    { value: 'SALEYA_STOCK_SCAN', label: t('scanner.events.SALEYA_STOCK_SCAN') },
-    { value: 'DELIVERY_B2B', label: t('scanner.events.DELIVERY_B2B') },
+    { value: 'MIRAZUR_BOOK_SCAN', label: t('scanner.events.MIRAZUR') },
+    { value: 'OFFICE_BOOK_SCAN', label: t('scanner.events.OFFICE SCAN') },
+    
   ];
   const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'success' | 'error' | 'permission_denied'>('idle');
   const [lastScan, setLastScan] = useState<string | null>(null);
