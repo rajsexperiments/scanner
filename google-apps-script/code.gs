@@ -15,7 +15,7 @@ const CAKE_STATUS_SHEET_NAME = 'Cake Status Dashboard';
 const LIVE_OPS_SHEET_NAME = 'Live Operations Dashboard';
 const B2B_CLIENTS_SHEET_NAME = 'B2B Clients';
 const WEEKLY_SALES_REPORT_SHEET_NAME = 'Weekly Sales Report';
-const CACHE_EXPIRATION_SECONDS = 10;
+const CACHE_EXPIRATION_SECONDS = 30;
 
 
 // --- WEB APP ENTRY POINTS ---
